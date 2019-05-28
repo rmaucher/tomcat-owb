@@ -24,12 +24,12 @@ import java.util.LinkedList;
 
 import javax.servlet.ServletContext;
 
+import org.apache.catalina.Context;
 import org.apache.catalina.Lifecycle;
 import org.apache.catalina.LifecycleEvent;
 import org.apache.catalina.LifecycleListener;
 import org.apache.catalina.Pipeline;
 import org.apache.catalina.Valve;
-import org.apache.catalina.core.StandardContext;
 import org.apache.tomcat.InstanceManager;
 import org.apache.webbeans.servlet.WebBeansConfigurationListener;
 
@@ -43,13 +43,11 @@ import org.apache.webbeans.servlet.WebBeansConfigurationListener;
  */
 public class ContextLifecycleListener implements LifecycleListener {
 
-    protected StandardContext context = null;
-
     @Override
     public void lifecycleEvent(LifecycleEvent event) {
         try {
-            if (event.getSource() instanceof StandardContext) {
-                context = (StandardContext) event.getSource();
+            if (event.getSource() instanceof Context) {
+                Context context = (Context) event.getSource();
                 if (event.getType().equals(Lifecycle.CONFIGURE_START_EVENT)) {
                     ServletContext scontext = context.getServletContext();
                     URL url = getBeansXml(scontext);
@@ -59,20 +57,22 @@ public class ContextLifecycleListener implements LifecycleListener {
                                 "org.apache.webbeans.application.jsp", "true");
 
                         addOwbListeners(context);
-                        addOwbValves(context);
+                        addOwbValves(context.getPipeline());
                     }
                 }
-            } else if (event.getType().equals(Lifecycle.START_EVENT) && event.getSource() instanceof Pipeline && context != null) {
+            } else if (event.getType().equals(Lifecycle.START_EVENT) && event.getSource() instanceof Pipeline) {
                 // This notification occurs once the configuration is fully done, including naming resources setup
                 // Otherwise, the instance manager is not ready for creation
-                wrapInstanceManager(context);
+                if (((Pipeline) event.getSource()).getContainer() instanceof Context) {
+                    wrapInstanceManager((Context) ((Pipeline) event.getSource()).getContainer());
+                }
             }
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
     }
 
-    private void addOwbListeners(StandardContext context) {
+    private void addOwbListeners(Context context) {
         String[] oldListeners = context.findApplicationListeners();
         LinkedList<String> listeners = new LinkedList<>();
 
@@ -86,24 +86,30 @@ public class ContextLifecycleListener implements LifecycleListener {
         for (String listener : listeners) {
             context.addApplicationListener(listener);
         }
+    }
 
-        // Add to the corresponding pipeline to get a notification once configure is done
-        Lifecycle pipeline = ((Lifecycle) context.getPipeline());
-        for (LifecycleListener listener : pipeline.findLifecycleListeners()) {
-            if (listener instanceof ContextLifecycleListener) {
-                return;
-            }
-        }
-        ((Lifecycle) context.getPipeline()).addLifecycleListener(this);
-}
-
-    private void addOwbValves(StandardContext context) {
-        for (Valve valve : context.getPipeline().getValves()) {
+    private void addOwbValves(Pipeline pipeline) {
+        boolean securityValveFound = false;
+        for (Valve valve : pipeline.getValves()) {
             if (valve instanceof TomcatSecurityValve) {
-                return;
+                securityValveFound = true;
             }
         }
-        context.addValve(new TomcatSecurityValve());
+        if (!securityValveFound) {
+            pipeline.addValve(new TomcatSecurityValve());
+        }
+        // Add to the corresponding pipeline to get a notification once configure is done
+        if (pipeline instanceof Lifecycle) {
+            boolean contextLifecycleListenerFound = false;
+            for (LifecycleListener listener : ((Lifecycle) pipeline).findLifecycleListeners()) {
+                if (listener instanceof ContextLifecycleListener) {
+                    contextLifecycleListenerFound = true;
+                }
+            }
+            if (!contextLifecycleListenerFound) {
+                ((Lifecycle) pipeline).addLifecycleListener(this);
+            }
+        }
     }
 
     private URL getBeansXml(ServletContext scontext)
@@ -115,11 +121,10 @@ public class ContextLifecycleListener implements LifecycleListener {
         return url;
     }
 
-    private void wrapInstanceManager(StandardContext context) {
+    private void wrapInstanceManager(Context context) {
         if (context.getInstanceManager() instanceof TomcatInstanceManager) {
             return;
         }
-
         InstanceManager processor = context.getInstanceManager();
         if (processor == null) {
             processor = context.createInstanceManager();
