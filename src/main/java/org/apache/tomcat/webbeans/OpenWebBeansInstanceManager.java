@@ -30,6 +30,7 @@ import javax.naming.NamingException;
 import org.apache.juli.logging.Log;
 import org.apache.juli.logging.LogFactory;
 import org.apache.tomcat.InstanceManager;
+import org.apache.tomcat.util.res.StringManager;
 import org.apache.webbeans.config.WebBeansContext;
 import org.apache.webbeans.container.BeanManagerImpl;
 import org.apache.webbeans.inject.OWBInjector;
@@ -37,6 +38,7 @@ import org.apache.webbeans.inject.OWBInjector;
 public class OpenWebBeansInstanceManager implements InstanceManager {
 
     private static final Log log = LogFactory.getLog(OpenWebBeansInstanceManager.class);
+    private static final StringManager sm = StringManager.getManager(OpenWebBeansInstanceManager.class);
 
     private final ClassLoader loader;
     private final InstanceManager instanceManager;
@@ -77,7 +79,7 @@ public class OpenWebBeansInstanceManager implements InstanceManager {
                     Thread.currentThread().setContextClassLoader(oldLoader);
                 }
             } catch (Exception e) {
-                log.error("Error occured while destroying the injector for instance " + object, e);
+                log.error(sm.getString("instanceManager.destroyError", object), e);
             }
         }
         this.instanceManager.destroyInstance(object);
@@ -132,7 +134,7 @@ public class OpenWebBeansInstanceManager implements InstanceManager {
             }
             instances.put(object, new Instance(object, context));
         } catch (Exception e) {
-            log.error("Error occured while injecting the dependencies for instance " + object, e);
+            log.error(sm.getString("instanceManager.injectError", object), e);
         }
     }
 

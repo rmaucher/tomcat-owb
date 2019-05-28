@@ -31,6 +31,7 @@ import javax.servlet.http.HttpSessionListener;
 
 import java.util.EventListener;
 
+import org.apache.tomcat.util.res.StringManager;
 import org.apache.webbeans.exception.WebBeansConfigurationException;
 import org.apache.webbeans.spi.SecurityService;
 import org.apache.webbeans.spi.plugins.AbstractOwbPlugin;
@@ -39,6 +40,8 @@ import org.apache.webbeans.spi.plugins.AbstractOwbPlugin;
  * Tomcat plugin for OpenWebBeans.
  */
 public class OpenWebBeansPlugin extends AbstractOwbPlugin {
+
+    private static final StringManager sm = StringManager.getManager(OpenWebBeansPlugin.class);
 
     /**
      * Security service implementation.
@@ -56,7 +59,7 @@ public class OpenWebBeansPlugin extends AbstractOwbPlugin {
     @Override
     public void isManagedBean(Class<?> clazz) {
         if (isServletSpecClass(clazz)) {
-            throw new WebBeansConfigurationException("Given class [" + clazz.getName() + "] is not a managed bean");
+            throw new WebBeansConfigurationException(sm.getString("plugin.notManagedBean", clazz.getName()));
         }
     }
 
@@ -73,7 +76,6 @@ public class OpenWebBeansPlugin extends AbstractOwbPlugin {
                 || Filter.class.isAssignableFrom(clazz)) {
             return true;
         }
-
         if (EventListener.class.isAssignableFrom(clazz)) {
             return ServletContextListener.class.isAssignableFrom(clazz)
                     || ServletContextAttributeListener.class.isAssignableFrom(clazz)
