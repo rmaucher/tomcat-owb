@@ -18,22 +18,9 @@
  */
 package org.apache.tomcat.webbeans.test;
 
-import org.apache.catalina.Context;
-import org.apache.catalina.connector.Request;
-import org.apache.catalina.connector.Response;
-import org.apache.catalina.core.StandardContext;
-import org.apache.catalina.startup.Tomcat;
-import org.apache.tomcat.util.http.fileupload.IOUtils;
-import org.apache.tomcat.webbeans.OpenWebBeansContextLifecycleListener;
-import org.apache.webbeans.config.WebBeansContext;
-import org.apache.webbeans.spi.ContextsService;
-import org.junit.Test;
+import static java.util.Arrays.asList;
+import static org.junit.Assert.assertEquals;
 
-import javax.enterprise.context.RequestScoped;
-import javax.enterprise.context.SessionScoped;
-import javax.enterprise.inject.spi.BeanManager;
-import javax.enterprise.inject.spi.CDI;
-import javax.servlet.ServletRequestEvent;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.FileWriter;
@@ -45,8 +32,22 @@ import java.lang.reflect.Method;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import static java.util.Arrays.asList;
-import static org.junit.Assert.assertEquals;
+import javax.enterprise.context.RequestScoped;
+import javax.enterprise.context.SessionScoped;
+import javax.enterprise.inject.spi.BeanManager;
+import javax.enterprise.inject.spi.CDI;
+import javax.servlet.ServletRequestEvent;
+
+import org.apache.catalina.Context;
+import org.apache.catalina.connector.Request;
+import org.apache.catalina.connector.Response;
+import org.apache.catalina.core.StandardContext;
+import org.apache.catalina.startup.Tomcat;
+import org.apache.tomcat.util.http.fileupload.IOUtils;
+import org.apache.tomcat.webbeans.OpenWebBeansListener;
+import org.apache.webbeans.config.WebBeansContext;
+import org.apache.webbeans.spi.ContextsService;
+import org.junit.Test;
 
 public class TomcatNormalScopeProxyFactoryTest
 {
@@ -64,9 +65,9 @@ public class TomcatNormalScopeProxyFactoryTest
             final Tomcat tomcat = new Tomcat();
             tomcat.setPort(0);
             tomcat.setBaseDir(base.getAbsolutePath());
+            tomcat.getServer().addLifecycleListener(new OpenWebBeansListener());
 
             final Context ctx = tomcat.addContext("/test", war.getAbsolutePath());
-            ctx.addLifecycleListener(new OpenWebBeansContextLifecycleListener());
 
             // needed for Java9
             if (ctx instanceof StandardContext) {
