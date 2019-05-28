@@ -18,11 +18,8 @@
  */
 package org.apache.tomcat.webbeans;
 
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.LinkedList;
-
-import javax.servlet.ServletContext;
 
 import org.apache.catalina.Context;
 import org.apache.catalina.Lifecycle;
@@ -45,96 +42,67 @@ public class ContextLifecycleListener implements LifecycleListener {
 
     @Override
     public void lifecycleEvent(LifecycleEvent event) {
-        try {
-            if (event.getSource() instanceof Context) {
-                Context context = (Context) event.getSource();
-                if (event.getType().equals(Lifecycle.CONFIGURE_START_EVENT)) {
-                    ServletContext scontext = context.getServletContext();
-                    URL url = getBeansXml(scontext);
-                    if (url != null) {
-                        // Registering ELResolver with JSP container
-                        System.setProperty(
-                                "org.apache.webbeans.application.jsp", "true");
-
-                        addOwbListeners(context);
-                        addOwbValves(context.getPipeline());
+        if (event.getSource() instanceof Context) {
+            Context context = (Context) event.getSource();
+            if (event.getType().equals(Lifecycle.CONFIGURE_START_EVENT)) {
+                URL url = context.getResources().getResource("/WEB-INF/beans.xml").getURL();
+                if (url == null) {
+                    url = context.getResources().getResource("/WEB-INF/classes/META-INF/beans.xml").getURL();
+                }
+                if (url != null) {
+                    // Registering ELResolver with JSP container
+                    System.setProperty("org.apache.webbeans.application.jsp", "true");
+                    // Add Listeners
+                    String[] oldListeners = context.findApplicationListeners();
+                    LinkedList<String> listeners = new LinkedList<>();
+                    listeners.addFirst(WebBeansConfigurationListener.class.getName());
+                    for (String listener : oldListeners) {
+                        listeners.add(listener);
+                        context.removeApplicationListener(listener);
+                    }
+                    for (String listener : listeners) {
+                        context.addApplicationListener(listener);
+                    }
+                    Pipeline pipeline = context.getPipeline();
+                    // Add to the corresponding pipeline to get a notification once configure is done
+                    if (pipeline instanceof Lifecycle) {
+                        boolean contextLifecycleListenerFound = false;
+                        for (LifecycleListener listener : ((Lifecycle) pipeline).findLifecycleListeners()) {
+                            if (listener instanceof ContextLifecycleListener) {
+                                contextLifecycleListenerFound = true;
+                            }
+                        }
+                        if (!contextLifecycleListenerFound) {
+                            ((Lifecycle) pipeline).addLifecycleListener(this);
+                        }
+                    }
+                    // Add security valve
+                    boolean securityValveFound = false;
+                    for (Valve valve : pipeline.getValves()) {
+                        if (valve instanceof TomcatSecurityValve) {
+                            securityValveFound = true;
+                        }
+                    }
+                    if (!securityValveFound) {
+                        pipeline.addValve(new TomcatSecurityValve());
                     }
                 }
-            } else if (event.getType().equals(Lifecycle.START_EVENT) && event.getSource() instanceof Pipeline) {
-                // This notification occurs once the configuration is fully done, including naming resources setup
-                // Otherwise, the instance manager is not ready for creation
-                if (((Pipeline) event.getSource()).getContainer() instanceof Context) {
-                    wrapInstanceManager((Context) ((Pipeline) event.getSource()).getContainer());
+            }
+        } else if (event.getType().equals(Lifecycle.START_EVENT) && event.getSource() instanceof Pipeline) {
+            // This notification occurs once the configuration is fully done, including naming resources setup
+            // Otherwise, the instance manager is not ready for creation
+            if (((Pipeline) event.getSource()).getContainer() instanceof Context) {
+                Context context = (Context) ((Pipeline) event.getSource()).getContainer();
+                if (!(context.getInstanceManager() instanceof TomcatInstanceManager)) {
+                    InstanceManager processor = context.getInstanceManager();
+                    if (processor == null) {
+                        processor = context.createInstanceManager();
+                    }
+                    InstanceManager custom = new TomcatInstanceManager(context.getLoader().getClassLoader(), processor);
+                    context.setInstanceManager(custom);
                 }
             }
-        } catch (Exception e) {
-            throw new RuntimeException(e);
         }
-    }
-
-    private void addOwbListeners(Context context) {
-        String[] oldListeners = context.findApplicationListeners();
-        LinkedList<String> listeners = new LinkedList<>();
-
-        listeners.addFirst(WebBeansConfigurationListener.class.getName());
-
-        for (String listener : oldListeners) {
-            listeners.add(listener);
-            context.removeApplicationListener(listener);
-        }
-
-        for (String listener : listeners) {
-            context.addApplicationListener(listener);
-        }
-    }
-
-    private void addOwbValves(Pipeline pipeline) {
-        boolean securityValveFound = false;
-        for (Valve valve : pipeline.getValves()) {
-            if (valve instanceof TomcatSecurityValve) {
-                securityValveFound = true;
-            }
-        }
-        if (!securityValveFound) {
-            pipeline.addValve(new TomcatSecurityValve());
-        }
-        // Add to the corresponding pipeline to get a notification once configure is done
-        if (pipeline instanceof Lifecycle) {
-            boolean contextLifecycleListenerFound = false;
-            for (LifecycleListener listener : ((Lifecycle) pipeline).findLifecycleListeners()) {
-                if (listener instanceof ContextLifecycleListener) {
-                    contextLifecycleListenerFound = true;
-                }
-            }
-            if (!contextLifecycleListenerFound) {
-                ((Lifecycle) pipeline).addLifecycleListener(this);
-            }
-        }
-    }
-
-    private URL getBeansXml(ServletContext scontext)
-            throws MalformedURLException {
-        URL url = scontext.getResource("/WEB-INF/beans.xml");
-        if (url == null) {
-            url = scontext.getResource("/WEB-INF/classes/META-INF/beans.xml");
-        }
-        return url;
-    }
-
-    private void wrapInstanceManager(Context context) {
-        if (context.getInstanceManager() instanceof TomcatInstanceManager) {
-            return;
-        }
-        InstanceManager processor = context.getInstanceManager();
-        if (processor == null) {
-            processor = context.createInstanceManager();
-        }
-        InstanceManager custom = new TomcatInstanceManager(
-                context.getLoader().getClassLoader(), processor);
-        context.setInstanceManager(custom);
-
-        context.getServletContext()
-                .setAttribute(InstanceManager.class.getName(), custom);
     }
 
 }
