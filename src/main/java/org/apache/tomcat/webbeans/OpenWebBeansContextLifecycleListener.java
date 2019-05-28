@@ -32,11 +32,7 @@ import org.apache.webbeans.servlet.WebBeansConfigurationListener;
 
 
 /**
- * Context lifecycle listener. Adapted from
- * OpenEJB Tomcat and updated.
- * 
- * @version $Rev$ $Date$
- *
+ * Context lifecycle listener.
  */
 public class OpenWebBeansContextLifecycleListener implements LifecycleListener {
 

@@ -23,12 +23,12 @@ import org.apache.catalina.core.FrameworkListener;
 
 /**
  * This listener must be declared in server.xml as a Server listener to be active.
- * It will register OpenWebBeansContextLifecycleListener on all contexts.
+ * It will add OpenWebBeansContextLifecycleListener on all contexts.
  */
 public class OpenWebBeansListener extends FrameworkListener {
 
     public OpenWebBeansListener() {
-        // Try loading a class from OWB to make sure it is available
+        // Try loading a class from OpenWebBeans to make sure it is available
         new org.apache.webbeans.exception.WebBeansConfigurationException("");
     }
 

@@ -38,60 +38,57 @@ public class OpenWebBeansInstanceManager implements InstanceManager {
 
     private static final Log log = LogFactory.getLog(OpenWebBeansInstanceManager.class);
 
-    private InstanceManager processor;
-
-    private ClassLoader loader;
-
-    private Map<Object, Object> objects = new ConcurrentHashMap<>();
-
-    public OpenWebBeansInstanceManager(ClassLoader loader,
-            InstanceManager processor) {
-        this.processor = processor;
-        this.loader = loader;
+    private final ClassLoader loader;
+    private final InstanceManager instanceManager;
+    private final Map<Object, Instance> instances = new ConcurrentHashMap<>();
+    private static final class Instance {
+        private final Object object;
+        private final CreationalContext<?> context;
+        private Instance(Object object, CreationalContext<?> context) {
+            this.object = object;
+            this.context = context;
+        }
     }
 
+    public OpenWebBeansInstanceManager(ClassLoader loader, InstanceManager instanceManager) {
+        this.loader = loader;
+        this.instanceManager = instanceManager;
+    }
+
+    @SuppressWarnings("unchecked")
     @Override
-    public void destroyInstance(Object instance)
+    public void destroyInstance(Object object)
             throws IllegalAccessException, InvocationTargetException {
-        Object injectorInstance = objects.get(instance);
+        Instance injectorInstance = instances.get(object);
         if (injectorInstance != null) {
             try {
-                if (log.isDebugEnabled()) {
-                    log.debug("Destroying the OpenWebBeans injector instance");
-                }
-                Instance instanceWrapper = (Instance) injectorInstance;
                 ClassLoader oldLoader = Thread.currentThread().getContextClassLoader();
                 Thread.currentThread().setContextClassLoader(loader);
                 try {
                     BeanManagerImpl beanManager = WebBeansContext.currentInstance().getBeanManagerImpl();
-                    Producer producer = beanManager.getProducerForJavaEeComponent(instanceWrapper.object.getClass());
+                    @SuppressWarnings("rawtypes")
+                    Producer producer = beanManager.getProducerForJavaEeComponent(injectorInstance.object.getClass());
                     if (producer != null) {
-                        producer.dispose(instanceWrapper.object);
-                    } else if (instanceWrapper.context != null) {
-                        instanceWrapper.context.release();
+                        producer.dispose(injectorInstance.object);
+                    } else if (injectorInstance.context != null) {
+                        injectorInstance.context.release();
                     }
                 } finally {
                     Thread.currentThread().setContextClassLoader(oldLoader);
                 }
             } catch (Exception e) {
-                log.error(
-                        "Erros is occured while destroying the OpenWebBeans injector instance",
-                        e);
+                log.error("Error occured while destroying the injector for instance " + object, e);
             }
         }
-        this.processor.destroyInstance(instance);
+        this.instanceManager.destroyInstance(object);
     }
 
     @Override
     public Object newInstance(Class<?> aClass) throws IllegalAccessException,
             InvocationTargetException, NamingException, InstantiationException,
             IllegalArgumentException, NoSuchMethodException, SecurityException {
-        // Creates a defaut instance
-        Object object = this.processor.newInstance(aClass);
-
-        // Inject dependencies
+        Object object = this.instanceManager.newInstance(aClass);
         inject(object);
-
         return object;
     }
 
@@ -100,19 +97,14 @@ public class OpenWebBeansInstanceManager implements InstanceManager {
             throws IllegalAccessException, InvocationTargetException,
             NamingException, InstantiationException, ClassNotFoundException,
             IllegalArgumentException, NoSuchMethodException, SecurityException {
-        // Creates a defaut instance
-        Object object = this.processor.newInstance(str);
-
-        // Inject dependencies
+        Object object = this.instanceManager.newInstance(str);
         inject(object);
-
         return object;
     }
 
     @Override
     public void newInstance(Object object) throws IllegalAccessException,
             InvocationTargetException, NamingException {
-        // Inject dependencies
         inject(object);
     }
 
@@ -121,49 +113,27 @@ public class OpenWebBeansInstanceManager implements InstanceManager {
             throws IllegalAccessException, InvocationTargetException,
             NamingException, InstantiationException, ClassNotFoundException,
             IllegalArgumentException, NoSuchMethodException, SecurityException {
-        // Creates a defaut instance
-        Object object = this.processor.newInstance(str, cl);
-
-        // Inject dependencies
+        Object object = this.instanceManager.newInstance(str, cl);
         inject(object);
-
         return object;
     }
 
     private void inject(Object object) {
         try {
-            if (log.isDebugEnabled()) {
-                log.debug("Injecting the dependencies for OpenWebBeans, "
-                        + "instance : " + object);
-            }
             ClassLoader oldLoader = Thread.currentThread().getContextClassLoader();
             Thread.currentThread().setContextClassLoader(loader);
             CreationalContext<?> context = null;
             try {
-                BeanManager beanManager = WebBeansContext.currentInstance()
-                        .getBeanManagerImpl();
+                BeanManager beanManager = WebBeansContext.currentInstance().getBeanManagerImpl();
                 context = beanManager.createCreationalContext(null);
                 OWBInjector.inject(beanManager, object, context);
             } finally {
                 Thread.currentThread().setContextClassLoader(oldLoader);
             }
-            Object injectorInstance = new Instance(object, context);
-            if (injectorInstance != null) {
-                objects.put(object, injectorInstance);
-            }
+            instances.put(object, new Instance(object, context));
         } catch (Exception e) {
-            log.error("Error is occured while injecting the OpenWebBeans "
-                    + "dependencies for instance " + object, e);
+            log.error("Error occured while injecting the dependencies for instance " + object, e);
         }
     }
 
-    private static final class Instance {
-        private Object object;
-        private CreationalContext<?> context;
-
-        private Instance(Object object, CreationalContext<?> context) {
-            this.object = object;
-            this.context = context;
-        }
-    }
 }

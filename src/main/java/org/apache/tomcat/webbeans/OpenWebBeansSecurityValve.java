@@ -30,7 +30,7 @@ import org.apache.catalina.valves.ValveBase;
 
 /**
  * Valve which sets the UserPrincipal into a ThreadLocal
- * to make it injectable via a CDI Producer
+ * to make it injectable via a CDI Producer.
  */
 public class OpenWebBeansSecurityValve extends ValveBase {
 

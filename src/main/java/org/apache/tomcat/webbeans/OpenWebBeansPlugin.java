@@ -36,54 +36,35 @@ import org.apache.webbeans.spi.SecurityService;
 import org.apache.webbeans.spi.plugins.AbstractOwbPlugin;
 
 /**
- * Tomcat plugin for OWB.
- * 
- * @version $Rev: 940336 $ $Date: 2010-05-03 02:32:18 +0300 (Mon, 03 May 2010) $
- *
+ * Tomcat plugin for OpenWebBeans.
  */
 public class OpenWebBeansPlugin extends AbstractOwbPlugin {
-    // Security service implementation.
+
+    /**
+     * Security service implementation.
+     */
     private final OpenWebBeansSecurityService securityService = new OpenWebBeansSecurityService();
 
-    /**
-     * Default constructor.
-     */
-    public OpenWebBeansPlugin() {
-
-    }
-
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public <T> T getSupportedService(Class<T> serviceClass) {
         if (serviceClass.equals(SecurityService.class)) {
             return serviceClass.cast(this.securityService);
         }
-
         return null;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public void isManagedBean(Class<?> clazz) {
         if (isServletSpecClass(clazz)) {
-            throw new WebBeansConfigurationException("Given class  : "
-                    + clazz.getName() + " is not managed bean");
+            throw new WebBeansConfigurationException("Given class [" + clazz.getName() + "] is not a managed bean");
         }
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public boolean supportsJavaEeComponentInjections(Class<?> clazz) {
         if (isServletSpecClass(clazz)) {
             return true;
         }
-
         return false;
     }
 
@@ -95,30 +76,22 @@ public class OpenWebBeansPlugin extends AbstractOwbPlugin {
 
         if (EventListener.class.isAssignableFrom(clazz)) {
             return ServletContextListener.class.isAssignableFrom(clazz)
-                    || ServletContextAttributeListener.class
-                            .isAssignableFrom(clazz)
-                    || HttpSessionActivationListener.class
-                            .isAssignableFrom(clazz)
-                    || HttpSessionAttributeListener.class
-                            .isAssignableFrom(clazz)
+                    || ServletContextAttributeListener.class.isAssignableFrom(clazz)
+                    || HttpSessionActivationListener.class.isAssignableFrom(clazz)
+                    || HttpSessionAttributeListener.class.isAssignableFrom(clazz)
                     || HttpSessionBindingListener.class.isAssignableFrom(clazz)
                     || HttpSessionListener.class.isAssignableFrom(clazz)
                     || ServletRequestListener.class.isAssignableFrom(clazz)
-                    || ServletRequestAttributeListener.class
-                            .isAssignableFrom(clazz);
+                    || ServletRequestAttributeListener.class.isAssignableFrom(clazz);
         }
         return false;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public boolean supportService(Class<?> serviceClass) {
         if (serviceClass.equals(SecurityService.class)) {
             return true;
         }
-
         return false;
     }
 
