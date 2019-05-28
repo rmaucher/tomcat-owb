@@ -38,7 +38,7 @@ import org.apache.webbeans.servlet.WebBeansConfigurationListener;
  * @version $Rev$ $Date$
  *
  */
-public class ContextLifecycleListener implements LifecycleListener {
+public class OpenWebBeansContextLifecycleListener implements LifecycleListener {
 
     @Override
     public void lifecycleEvent(LifecycleEvent event) {
@@ -68,7 +68,7 @@ public class ContextLifecycleListener implements LifecycleListener {
                     if (pipeline instanceof Lifecycle) {
                         boolean contextLifecycleListenerFound = false;
                         for (LifecycleListener listener : ((Lifecycle) pipeline).findLifecycleListeners()) {
-                            if (listener instanceof ContextLifecycleListener) {
+                            if (listener instanceof OpenWebBeansContextLifecycleListener) {
                                 contextLifecycleListenerFound = true;
                             }
                         }
@@ -79,12 +79,12 @@ public class ContextLifecycleListener implements LifecycleListener {
                     // Add security valve
                     boolean securityValveFound = false;
                     for (Valve valve : pipeline.getValves()) {
-                        if (valve instanceof TomcatSecurityValve) {
+                        if (valve instanceof OpenWebBeansSecurityValve) {
                             securityValveFound = true;
                         }
                     }
                     if (!securityValveFound) {
-                        pipeline.addValve(new TomcatSecurityValve());
+                        pipeline.addValve(new OpenWebBeansSecurityValve());
                     }
                 }
             }
@@ -93,12 +93,12 @@ public class ContextLifecycleListener implements LifecycleListener {
             // Otherwise, the instance manager is not ready for creation
             if (((Pipeline) event.getSource()).getContainer() instanceof Context) {
                 Context context = (Context) ((Pipeline) event.getSource()).getContainer();
-                if (!(context.getInstanceManager() instanceof TomcatInstanceManager)) {
+                if (!(context.getInstanceManager() instanceof OpenWebBeansInstanceManager)) {
                     InstanceManager processor = context.getInstanceManager();
                     if (processor == null) {
                         processor = context.createInstanceManager();
                     }
-                    InstanceManager custom = new TomcatInstanceManager(context.getLoader().getClassLoader(), processor);
+                    InstanceManager custom = new OpenWebBeansInstanceManager(context.getLoader().getClassLoader(), processor);
                     context.setInstanceManager(custom);
                 }
             }

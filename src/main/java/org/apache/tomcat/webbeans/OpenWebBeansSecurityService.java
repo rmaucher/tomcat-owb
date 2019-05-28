@@ -24,40 +24,33 @@ import java.security.Principal;
 
 import org.apache.webbeans.corespi.security.SimpleSecurityService;
 
-public class TomcatSecurityService extends SimpleSecurityService
-{
+public class OpenWebBeansSecurityService extends SimpleSecurityService {
 
     private final Principal proxy = Principal.class.cast(Proxy.newProxyInstance(
-            TomcatSecurityService.class.getClassLoader(),
-            new Class<?>[]{Principal.class, Unwrap.class}, (proxy, method, args) ->
-            {
-                try
-                {
-                    final Principal principal = TomcatSecurityValve.getPrincipal();
-                    if (principal == null)
-                    {
+            OpenWebBeansSecurityService.class.getClassLoader(),
+            new Class<?>[] { Principal.class, Unwrap.class },
+            (proxy, method, args) -> {
+                try {
+                    final Principal principal = OpenWebBeansSecurityValve
+                            .getPrincipal();
+                    if (principal == null) {
                         return null;
                     }
-                    if (Unwrap.class == method.getDeclaringClass())
-                    {
+                    if (Unwrap.class == method.getDeclaringClass()) {
                         return principal;
                     }
                     return method.invoke(principal, args);
-                }
-                catch (final InvocationTargetException ite)
-                {
+                } catch (final InvocationTargetException ite) {
                     throw ite.getTargetException();
                 }
             }));
 
     @Override
-    public Principal getCurrentPrincipal()
-    {
+    public Principal getCurrentPrincipal() {
         return proxy;
     }
 
-    public interface Unwrap
-    {
+    public interface Unwrap {
         Principal get();
     }
 }

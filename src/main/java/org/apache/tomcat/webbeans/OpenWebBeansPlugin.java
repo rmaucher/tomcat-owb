@@ -41,43 +41,37 @@ import org.apache.webbeans.spi.plugins.AbstractOwbPlugin;
  * @version $Rev: 940336 $ $Date: 2010-05-03 02:32:18 +0300 (Mon, 03 May 2010) $
  *
  */
-public class TomcatWebPlugin extends AbstractOwbPlugin
-{
-    //Security service implementation.
-    private final TomcatSecurityService securityService = new TomcatSecurityService();
-    
+public class OpenWebBeansPlugin extends AbstractOwbPlugin {
+    // Security service implementation.
+    private final OpenWebBeansSecurityService securityService = new OpenWebBeansSecurityService();
+
     /**
      * Default constructor.
      */
-    public TomcatWebPlugin()
-    {
-        
+    public OpenWebBeansPlugin() {
+
     }
-    
+
     /**
      * {@inheritDoc}
      */
     @Override
-    public <T> T getSupportedService(Class<T> serviceClass)
-    {
-        if(serviceClass.equals(SecurityService.class))
-        {
+    public <T> T getSupportedService(Class<T> serviceClass) {
+        if (serviceClass.equals(SecurityService.class)) {
             return serviceClass.cast(this.securityService);
         }
-        
+
         return null;
     }
 
-
     /**
      * {@inheritDoc}
      */
     @Override
-    public void isManagedBean(Class<?> clazz)
-    {
-        if (isServletSpecClass(clazz))
-        {
-            throw new WebBeansConfigurationException("Given class  : " + clazz.getName() + " is not managed bean");
+    public void isManagedBean(Class<?> clazz) {
+        if (isServletSpecClass(clazz)) {
+            throw new WebBeansConfigurationException("Given class  : "
+                    + clazz.getName() + " is not managed bean");
         }
     }
 
@@ -85,50 +79,46 @@ public class TomcatWebPlugin extends AbstractOwbPlugin
      * {@inheritDoc}
      */
     @Override
-    public boolean supportsJavaEeComponentInjections(Class<?> clazz)
-    {
-        if(isServletSpecClass(clazz))
-        {
+    public boolean supportsJavaEeComponentInjections(Class<?> clazz) {
+        if (isServletSpecClass(clazz)) {
             return true;
         }
 
         return false;
     }
 
-    private boolean isServletSpecClass(Class<?> clazz)
-    {
-        if (Servlet.class.isAssignableFrom(clazz) ||
-            Filter.class.isAssignableFrom(clazz))
-        {
+    private boolean isServletSpecClass(Class<?> clazz) {
+        if (Servlet.class.isAssignableFrom(clazz)
+                || Filter.class.isAssignableFrom(clazz)) {
             return true;
         }
 
-        if (EventListener.class.isAssignableFrom(clazz))
-        {
-            return ServletContextListener.class.isAssignableFrom(clazz) ||
-                   ServletContextAttributeListener.class.isAssignableFrom(clazz) ||
-                   HttpSessionActivationListener.class.isAssignableFrom(clazz) ||
-                   HttpSessionAttributeListener.class.isAssignableFrom(clazz) ||
-                   HttpSessionBindingListener.class.isAssignableFrom(clazz) ||
-                   HttpSessionListener.class.isAssignableFrom(clazz) ||
-                   ServletRequestListener.class.isAssignableFrom(clazz) ||
-                   ServletRequestAttributeListener.class.isAssignableFrom(clazz);
+        if (EventListener.class.isAssignableFrom(clazz)) {
+            return ServletContextListener.class.isAssignableFrom(clazz)
+                    || ServletContextAttributeListener.class
+                            .isAssignableFrom(clazz)
+                    || HttpSessionActivationListener.class
+                            .isAssignableFrom(clazz)
+                    || HttpSessionAttributeListener.class
+                            .isAssignableFrom(clazz)
+                    || HttpSessionBindingListener.class.isAssignableFrom(clazz)
+                    || HttpSessionListener.class.isAssignableFrom(clazz)
+                    || ServletRequestListener.class.isAssignableFrom(clazz)
+                    || ServletRequestAttributeListener.class
+                            .isAssignableFrom(clazz);
         }
         return false;
     }
 
-    
     /**
      * {@inheritDoc}
      */
     @Override
-    public boolean supportService(Class<?> serviceClass)
-    {
-        if(serviceClass.equals(SecurityService.class))
-        {
+    public boolean supportService(Class<?> serviceClass) {
+        if (serviceClass.equals(SecurityService.class)) {
             return true;
         }
-        
+
         return false;
     }
 

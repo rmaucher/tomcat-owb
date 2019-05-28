@@ -24,7 +24,7 @@ import org.apache.catalina.connector.Response;
 import org.apache.catalina.core.StandardContext;
 import org.apache.catalina.startup.Tomcat;
 import org.apache.tomcat.util.http.fileupload.IOUtils;
-import org.apache.tomcat.webbeans.ContextLifecycleListener;
+import org.apache.tomcat.webbeans.OpenWebBeansContextLifecycleListener;
 import org.apache.webbeans.config.WebBeansContext;
 import org.apache.webbeans.spi.ContextsService;
 import org.junit.Test;
@@ -66,7 +66,7 @@ public class TomcatNormalScopeProxyFactoryTest
             tomcat.setBaseDir(base.getAbsolutePath());
 
             final Context ctx = tomcat.addContext("/test", war.getAbsolutePath());
-            ctx.addLifecycleListener(new ContextLifecycleListener());
+            ctx.addLifecycleListener(new OpenWebBeansContextLifecycleListener());
 
             // needed for Java9
             if (ctx instanceof StandardContext) {
