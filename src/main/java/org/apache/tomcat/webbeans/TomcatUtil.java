@@ -26,57 +26,44 @@ import javax.enterprise.context.spi.CreationalContext;
 import javax.enterprise.inject.spi.BeanManager;
 import javax.enterprise.inject.spi.Producer;
 
-public class TomcatUtil
-{
-    public static Object inject(Object object, ClassLoader loader)
-    {
+public class TomcatUtil {
+    public static Object inject(Object object, ClassLoader loader) {
         ClassLoader oldLoader = Thread.currentThread().getContextClassLoader();
         Thread.currentThread().setContextClassLoader(loader);
         CreationalContext<?> context = null;
-        try
-        {
-            BeanManager beanManager = WebBeansContext.currentInstance().getBeanManagerImpl();
+        try {
+            BeanManager beanManager = WebBeansContext.currentInstance()
+                    .getBeanManagerImpl();
             context = beanManager.createCreationalContext(null);
             OWBInjector.inject(beanManager, object, context);
-        }
-        finally
-        {
+        } finally {
             Thread.currentThread().setContextClassLoader(oldLoader);
         }
         return new Instance(object, context);
     }
-    
-    public static void destroy(Object injectorInstance, ClassLoader loader)
-    {
+
+    public static void destroy(Object injectorInstance, ClassLoader loader) {
         Instance instance = (TomcatUtil.Instance) injectorInstance;
         ClassLoader oldLoader = Thread.currentThread().getContextClassLoader();
         Thread.currentThread().setContextClassLoader(loader);
-        try
-        {
+        try {
             BeanManagerImpl beanManager = WebBeansContext.currentInstance().getBeanManagerImpl();
             Producer producer = beanManager.getProducerForJavaEeComponent(instance.object.getClass());
-            if (producer != null)
-            {
+            if (producer != null) {
                 producer.dispose(instance.object);
-            }
-            else if (instance.context != null)
-            {
+            } else if (instance.context != null) {
                 instance.context.release();
             }
-        }
-        finally
-        {
+        } finally {
             Thread.currentThread().setContextClassLoader(oldLoader);
         }
     }
 
-    private static final class Instance
-    {
+    private static final class Instance {
         private Object object;
         private CreationalContext<?> context;
 
-        private Instance(Object object, CreationalContext<?> context)
-        {
+        private Instance(Object object, CreationalContext<?> context) {
             this.object = object;
             this.context = context;
         }

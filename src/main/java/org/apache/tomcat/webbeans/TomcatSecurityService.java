@@ -33,7 +33,7 @@ public class TomcatSecurityService extends SimpleSecurityService
             {
                 try
                 {
-                    final Principal principal = TomcatSecurityFilter.getPrincipal();
+                    final Principal principal = TomcatSecurityValve.getPrincipal();
                     if (principal == null)
                     {
                         return null;

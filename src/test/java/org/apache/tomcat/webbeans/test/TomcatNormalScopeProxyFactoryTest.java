@@ -99,6 +99,7 @@ public class TomcatNormalScopeProxyFactoryTest
                     final Request request = new Request(tomcat.getConnector());
                     request.getMappingData().context = ctx;
                     request.setResponse(response);
+                    response.setRequest(request);
                     request.setRequestedSessionId(sessionId);
 
                     final ContextsService contextsService = WebBeansContext.currentInstance().getContextsService();

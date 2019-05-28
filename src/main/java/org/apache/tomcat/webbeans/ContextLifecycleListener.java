@@ -18,21 +18,20 @@
  */
 package org.apache.tomcat.webbeans;
 
-import org.apache.catalina.Lifecycle;
-import org.apache.catalina.LifecycleEvent;
-import org.apache.catalina.LifecycleListener;
-import org.apache.catalina.core.StandardContext;
-import org.apache.tomcat.InstanceManager;
-import org.apache.webbeans.exception.WebBeansException;
-import org.apache.webbeans.servlet.WebBeansConfigurationListener;
-
-import javax.servlet.ServletContext;
-import javax.servlet.ServletContextAttributeEvent;
-import javax.servlet.ServletContextAttributeListener;
-import java.lang.reflect.Field;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.LinkedList;
+
+import javax.servlet.ServletContext;
+
+import org.apache.catalina.Lifecycle;
+import org.apache.catalina.LifecycleEvent;
+import org.apache.catalina.LifecycleListener;
+import org.apache.catalina.Pipeline;
+import org.apache.catalina.Valve;
+import org.apache.catalina.core.StandardContext;
+import org.apache.tomcat.InstanceManager;
+import org.apache.webbeans.servlet.WebBeansConfigurationListener;
 
 
 /**
@@ -42,145 +41,95 @@ import java.util.LinkedList;
  * @version $Rev$ $Date$
  *
  */
-public class ContextLifecycleListener implements LifecycleListener, ServletContextAttributeListener
-{
-    public ContextLifecycleListener()
-    {
-    }
+public class ContextLifecycleListener implements LifecycleListener {
+
+    protected StandardContext context = null;
 
     @Override
-    public void lifecycleEvent(LifecycleEvent event)
-    {
-        try
-        {
-            if (event.getSource() instanceof StandardContext)
-            {
-                StandardContext context = (StandardContext) event.getSource();
-
-                if (event.getType().equals(Lifecycle.CONFIGURE_START_EVENT))
-                {
+    public void lifecycleEvent(LifecycleEvent event) {
+        try {
+            if (event.getSource() instanceof StandardContext) {
+                context = (StandardContext) event.getSource();
+                if (event.getType().equals(Lifecycle.CONFIGURE_START_EVENT)) {
                     ServletContext scontext = context.getServletContext();
                     URL url = getBeansXml(scontext);
-                    if (url != null)
-                    {
-                        //Registering ELResolver with JSP container
-                        System.setProperty("org.apache.webbeans.application.jsp", "true");
+                    if (url != null) {
+                        // Registering ELResolver with JSP container
+                        System.setProperty(
+                                "org.apache.webbeans.application.jsp", "true");
 
                         addOwbListeners(context);
-                        addOwbFilters(context);
-
-                        context.addApplicationListener(TomcatSecurityFilter.class.getName());
-                        context.addApplicationEventListener(this);
+                        addOwbValves(context);
                     }
                 }
+            } else if (event.getType().equals(Lifecycle.START_EVENT) && event.getSource() instanceof Pipeline && context != null) {
+                // This notification occurs once the configuration is fully done, including naming resources setup
+                // Otherwise, the instance manager is not ready for creation
+                wrapInstanceManager(context);
             }
-        }
-        catch(Exception e)
-        {
+        } catch (Exception e) {
             throw new RuntimeException(e);
-        }        
+        }
     }
 
-
-    private void addOwbListeners(StandardContext context)
-    {
+    private void addOwbListeners(StandardContext context) {
         String[] oldListeners = context.findApplicationListeners();
         LinkedList<String> listeners = new LinkedList<>();
 
         listeners.addFirst(WebBeansConfigurationListener.class.getName());
 
-        for(String listener : oldListeners)
-        {
+        for (String listener : oldListeners) {
             listeners.add(listener);
             context.removeApplicationListener(listener);
         }
 
-        for(String listener : listeners)
-        {
+        for (String listener : listeners) {
             context.addApplicationListener(listener);
         }
+
+        // Add to the corresponding pipeline to get a notification once configure is done
+        Lifecycle pipeline = ((Lifecycle) context.getPipeline());
+        for (LifecycleListener listener : pipeline.findLifecycleListeners()) {
+            if (listener instanceof ContextLifecycleListener) {
+                return;
+            }
+        }
+        ((Lifecycle) context.getPipeline()).addLifecycleListener(this);
+}
+
+    private void addOwbValves(StandardContext context) {
+        for (Valve valve : context.getPipeline().getValves()) {
+            if (valve instanceof TomcatSecurityValve) {
+                return;
+            }
+        }
+        context.addValve(new TomcatSecurityValve());
     }
 
-    private void addOwbFilters(StandardContext context)
-    {
-        // we currently add all filters via web-fragment.xml
-    }
-
-    private URL getBeansXml(ServletContext scontext) throws MalformedURLException
-    {
+    private URL getBeansXml(ServletContext scontext)
+            throws MalformedURLException {
         URL url = scontext.getResource("/WEB-INF/beans.xml");
-        if (url == null)
-        {
+        if (url == null) {
             url = scontext.getResource("/WEB-INF/classes/META-INF/beans.xml");
         }
         return url;
     }
 
-
-    private void wrapInstanceManager(StandardContext context)
-    {
-        if (context.getInstanceManager() instanceof TomcatInstanceManager)
-        {
+    private void wrapInstanceManager(StandardContext context) {
+        if (context.getInstanceManager() instanceof TomcatInstanceManager) {
             return;
         }
 
         InstanceManager processor = context.getInstanceManager();
-        InstanceManager custom = new TomcatInstanceManager(context.getLoader().getClassLoader(), processor);
+        if (processor == null) {
+            processor = context.createInstanceManager();
+        }
+        InstanceManager custom = new TomcatInstanceManager(
+                context.getLoader().getClassLoader(), processor);
         context.setInstanceManager(custom);
 
-        context.getServletContext().setAttribute(InstanceManager.class.getName(), custom);
+        context.getServletContext()
+                .setAttribute(InstanceManager.class.getName(), custom);
     }
 
-    @Override
-    public void attributeAdded(ServletContextAttributeEvent servletContextAttributeEvent)
-    {
-        if (InstanceManager.class.getName().equals(servletContextAttributeEvent.getName()))
-        { // used as a hook to know we can override eagerly the InstanceManager
-            try
-            {
-                StandardContext context = (StandardContext) getContext(servletContextAttributeEvent.getServletContext());
-                wrapInstanceManager(context);
-            }
-            catch (NoSuchFieldException e)
-            {
-                throw new WebBeansException(e.getMessage(), e);
-            }
-            catch (IllegalAccessException e)
-            {
-                throw new WebBeansException(e.getMessage(), e);
-            }
-        }
-    }
-
-    private static Object getContext(Object o) throws NoSuchFieldException, IllegalAccessException
-    {
-        Field getContext = o.getClass().getDeclaredField("context");
-        boolean acc = getContext.isAccessible();
-        getContext.setAccessible(true);
-        try
-        {
-            Object retVal =  getContext.get(o);
-            if (! (retVal instanceof StandardContext))
-            {
-                retVal = getContext(retVal);
-            }
-            return retVal;
-        }
-        finally
-        {
-            getContext.setAccessible(acc);
-        }
-    }
-
-    @Override
-    public void attributeRemoved(ServletContextAttributeEvent servletContextAttributeEvent)
-    {
-        // nothing to do
-    }
-
-    @Override
-    public void attributeReplaced(ServletContextAttributeEvent servletContextAttributeEvent)
-    {
-        // nothing to do
-    }
 }
