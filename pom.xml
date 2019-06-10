@@ -28,7 +28,7 @@
     <properties>
         <openwebbeans.version>2.0.10</openwebbeans.version>
         <httpclient.version>4.5.2</httpclient.version>
-        <tomcat.version>9.0.21-dev</tomcat.version>
+        <tomcat.version>9.0.21</tomcat.version>
     </properties>
 
     <dependencies>
