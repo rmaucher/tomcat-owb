@@ -23,7 +23,7 @@ under the License.
          xsi:schemaLocation="http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns/javaee/web-app_3_0.xsd">
     <servlet>
         <servlet-name>TestServlet</servlet-name>
-        <servlet-class>org.apache.tomcat.webbeans.test.TestServlet</servlet-class>
+        <servlet-class>org.apache.webbeans.web.tomcat.test.TestServlet</servlet-class>
         <load-on-startup>1</load-on-startup>
     </servlet>
     <servlet-mapping>

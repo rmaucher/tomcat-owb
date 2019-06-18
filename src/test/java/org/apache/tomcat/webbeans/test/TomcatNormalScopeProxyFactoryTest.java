@@ -44,9 +44,9 @@ import org.apache.catalina.connector.Response;
 import org.apache.catalina.core.StandardContext;
 import org.apache.catalina.startup.Tomcat;
 import org.apache.tomcat.util.http.fileupload.IOUtils;
-import org.apache.tomcat.webbeans.OpenWebBeansListener;
 import org.apache.webbeans.config.WebBeansContext;
 import org.apache.webbeans.spi.ContextsService;
+import org.apache.webbeans.web.tomcat.OpenWebBeansListener;
 import org.junit.Test;
 
 public class TomcatNormalScopeProxyFactoryTest

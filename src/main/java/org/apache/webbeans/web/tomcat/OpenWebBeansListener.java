@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.tomcat.webbeans;
+package org.apache.webbeans.web.tomcat;
 
 import org.apache.catalina.Context;
 import org.apache.catalina.LifecycleListener;

@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.tomcat.webbeans;
+package org.apache.webbeans.web.tomcat;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.Map;

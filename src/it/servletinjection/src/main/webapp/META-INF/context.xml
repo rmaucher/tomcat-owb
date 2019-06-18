@@ -16,5 +16,5 @@
     License.
 -->
 <Context>
-  <Listener className="org.apache.tomcat.webbeans.OpenWebBeansContextLifecycleListener" />
+  <Listener className="org.apache.webbeans.web.tomcat.OpenWebBeansContextLifecycleListener" />
 </Context>
