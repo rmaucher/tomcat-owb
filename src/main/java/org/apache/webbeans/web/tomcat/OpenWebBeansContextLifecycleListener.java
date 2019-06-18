@@ -84,11 +84,12 @@ public class OpenWebBeansContextLifecycleListener implements LifecycleListener {
                     }
                 }
             }
-        } else if (event.getType().equals(Lifecycle.START_EVENT) && event.getSource() instanceof Pipeline) {
+        } else if (event.getSource() instanceof Pipeline && event.getType().equals(Lifecycle.START_EVENT)) {
             // This notification occurs once the configuration is fully done, including naming resources setup
             // Otherwise, the instance manager is not ready for creation
-            if (((Pipeline) event.getSource()).getContainer() instanceof Context) {
-                Context context = (Context) ((Pipeline) event.getSource()).getContainer();
+            Pipeline pipeline = (Pipeline) event.getSource();
+            if (pipeline.getContainer() instanceof Context) {
+                Context context = (Context) pipeline.getContainer();
                 if (!(context.getInstanceManager() instanceof OpenWebBeansInstanceManager)) {
                     InstanceManager processor = context.getInstanceManager();
                     if (processor == null) {
