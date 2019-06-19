@@ -34,7 +34,28 @@ public class OpenWebBeansListener extends FrameworkListener {
 
     @Override
     protected LifecycleListener createLifecycleListener(Context context) {
-        return new OpenWebBeansContextLifecycleListener();
+        OpenWebBeansContextLifecycleListener listener = new OpenWebBeansContextLifecycleListener();
+        listener.setStartWithoutBeanXml(getStartWithoutBeanXml());
+        return listener;
+    }
+
+    /**
+     * Start without a bean.xml file.
+     */
+    protected boolean startWithoutBeanXml = true;
+
+    /**
+     * @return the startWithoutBeanXml
+     */
+    public boolean getStartWithoutBeanXml() {
+        return startWithoutBeanXml;
+    }
+
+    /**
+     * @param startWithoutBeanXml the startWithoutBeanXml to set
+     */
+    public void setStartWithoutBeanXml(boolean startWithoutBeanXml) {
+        this.startWithoutBeanXml = startWithoutBeanXml;
     }
 
 }

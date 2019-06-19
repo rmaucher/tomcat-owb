@@ -36,16 +36,38 @@ import org.apache.webbeans.servlet.WebBeansConfigurationListener;
  */
 public class OpenWebBeansContextLifecycleListener implements LifecycleListener {
 
+    /**
+     * Start without a bean.xml file.
+     */
+    protected boolean startWithoutBeanXml = true;
+
+    /**
+     * @return the startWithoutBeanXml
+     */
+    public boolean getStartWithoutBeanXml() {
+        return startWithoutBeanXml;
+    }
+
+    /**
+     * @param startWithoutBeanXml the startWithoutBeanXml to set
+     */
+    public void setStartWithoutBeanXml(boolean startWithoutBeanXml) {
+        this.startWithoutBeanXml = startWithoutBeanXml;
+    }
+
     @Override
     public void lifecycleEvent(LifecycleEvent event) {
         if (event.getSource() instanceof Context) {
             Context context = (Context) event.getSource();
             if (event.getType().equals(Lifecycle.CONFIGURE_START_EVENT)) {
-                URL url = context.getResources().getResource("/WEB-INF/beans.xml").getURL();
-                if (url == null) {
-                    url = context.getResources().getResource("/WEB-INF/classes/META-INF/beans.xml").getURL();
+                URL url = null;
+                if (!getStartWithoutBeanXml()) {
+                    url = context.getResources().getResource("/WEB-INF/beans.xml").getURL();
+                    if (url == null) {
+                        url = context.getResources().getResource("/WEB-INF/classes/META-INF/beans.xml").getURL();
+                    }
                 }
-                if (url != null) {
+                if (getStartWithoutBeanXml() || url != null) {
                     // Registering ELResolver with JSP container
                     System.setProperty("org.apache.webbeans.application.jsp", "true");
                     // Add Listeners
