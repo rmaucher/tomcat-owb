@@ -17,7 +17,6 @@
 -->
 
     <modelVersion>4.0.0</modelVersion>
-
     <groupId>org.apache.tomcat</groupId>
     <artifactId>tomcat-owb</artifactId>
     <name>Apache Tomcat OpenWebBeans integration</name>
@@ -26,6 +25,7 @@
     <packaging>jar</packaging>
 
     <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <openwebbeans.version>2.0.10</openwebbeans.version>
         <tomcat.version>9.0.21</tomcat.version>
         <geronimo-jcdi.version>1.0.1</geronimo-jcdi.version>
