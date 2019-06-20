@@ -18,7 +18,6 @@
  */
 package org.apache.webbeans.web.tomcat;
 
-import java.net.URL;
 import java.util.LinkedList;
 
 import org.apache.catalina.Context;
@@ -60,14 +59,9 @@ public class OpenWebBeansContextLifecycleListener implements LifecycleListener {
         if (event.getSource() instanceof Context) {
             Context context = (Context) event.getSource();
             if (event.getType().equals(Lifecycle.CONFIGURE_START_EVENT)) {
-                URL url = null;
-                if (!getStartWithoutBeanXml()) {
-                    url = context.getResources().getResource("/WEB-INF/beans.xml").getURL();
-                    if (url == null) {
-                        url = context.getResources().getResource("/WEB-INF/classes/META-INF/beans.xml").getURL();
-                    }
-                }
-                if (getStartWithoutBeanXml() || url != null) {
+                if (getStartWithoutBeanXml()
+                        || context.getResources().getResource("/WEB-INF/beans.xml").exists()
+                        || context.getResources().getResource("/WEB-INF/classes/META-INF/beans.xml").exists()) {
                     // Registering ELResolver with JSP container
                     System.setProperty("org.apache.webbeans.application.jsp", "true");
                     // Add Listeners
