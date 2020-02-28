@@ -28,7 +28,7 @@
     <description>Apache OpenWebBeans Tomcat Web Profile</description>
 
     <properties>
-        <tomcat.version>9.0.21</tomcat.version>
+        <tomcat.version>9.0.31</tomcat.version>
     </properties>
 
     <dependencies>
