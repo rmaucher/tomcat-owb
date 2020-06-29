@@ -4,7 +4,9 @@ CDI support for Apache Tomcat 9+
 
 ## Microprofile CDI extensions
 
-CDI microprofile extensions as listed in: org.apache.tomee.microprofile.TomEEMicroProfileListener
+TIP: see https://geronimo.apache.org/microprofile/ for dependencies (all are setup free).
+
+For a specific tomcat based integration, you can have a look to Apache Tomee and org.apache.tomee.microprofile.TomEEMicroProfileListener.
 
 ### Configuration
 org.apache.geronimo.config:geronimo-config
